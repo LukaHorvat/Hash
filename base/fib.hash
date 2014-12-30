@@ -1,0 +1,7 @@
+_n
+    if (_n == 0)
+        return 0
+    else if (_n == 1)
+        return 1
+    else
+        return (fib (_n - 1) + fib (_n - 2))
