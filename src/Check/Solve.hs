@@ -27,12 +27,11 @@ addSubroutine state (AST.Subroutine name args statement)
           withStatement = addStatement name signature statement
 
 hasReturn :: Statement -> Bool
-hasReturn (AST.Assignment _ _) = False
-hasReturn (AST.Line _)         = False
-hasReturn (AST.If _ th el)     = hasReturn th || any hasReturn el 
-hasReturn (AST.While _ st)     = hasReturn st
-hasReturn (AST.Return _)       = True
-hasReturn (AST.Routine sts)    = any hasReturn sts
+hasReturn (AST.If _ th el)  = hasReturn th || any hasReturn el 
+hasReturn (AST.While _ st)  = hasReturn st
+hasReturn (AST.Return _)    = True
+hasReturn (AST.Routine sts) = any hasReturn sts
+hasReturn _                 = False
 
 addStatement :: Text -> State -> Statement -> State
 addStatement name state stmt = case stmt of
@@ -50,7 +49,7 @@ getPoint _    (AST.String _)        = Literal String
 getPoint _    (AST.Boolean _)       = Literal Boolean
 getPoint name (AST.Variable v)      = Variable name v
 getPoint name (AST.Application f es) = case (f, es) of
-    ("in", l : _) -> getPoint name l
+    ("id", a : _) -> getPoint name a --Redirects to the return type of the argument
     _             -> Return f
 
 connectSubroutine :: State -> Subroutine -> State
@@ -85,7 +84,8 @@ connectStatement name state stmt = case stmt of
 
 connectExpression :: Text -> State -> Expression -> State
 connectExpression name state expr = case expr of
-    AST.Application f es -> if f `elem` ["eq", "neq"] then connect es else foldl' (process f) state $ zip es [0..]
+    AST.Application f es | f `elem` ["eq", "neq"] -> connect es 
+                         | otherwise              -> foldl' (process f) state $ zip es [0..]
     _                    -> state
     where process f st (ex, i) = addConnection this (getPoint name ex) newSt where 
               this = Argument f i

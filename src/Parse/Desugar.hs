@@ -27,7 +27,13 @@ desugarInfix stat = case stat of
     While e s      -> While (expr e) (desugarInfix s)
     Return e       -> Return $ expr e
     Routine ss     -> Routine $ map desugarInfix ss
-    where expr (Binary op l r)    = Application op [expr l, expr r]
+    where expr (Binary "pipe" e1 e2) = case expr e2 of
+              Application n as -> Application n $ as ++ [expr e1]
+              _                -> error "Cannot pipe into something that isn't a function"
+          expr (Binary "in" e1 e2) = case expr e1 of
+              Application n as -> Application n $ as ++ [Application "readFile" [expr e2]]
+              _                -> error "Cannot stream into something that isn't a function"
+          expr (Binary op l r)    = Application op [expr l, expr r]
           expr (Application s es) = Application s $ map expr es 
           expr (Unary op e)       = Unary op $ expr e
           expr x                  = x

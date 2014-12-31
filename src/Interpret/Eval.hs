@@ -22,16 +22,6 @@ evalExpression (AST.Number n)         = return $ St.Number n
 evalExpression (AST.String s)         = return $ St.String s
 evalExpression (AST.Boolean b)        = return $ St.Boolean b
 evalExpression (AST.Variable n)       = gets (St.readVar n)
-evalExpression (AST.Application "in" es) = case es of
-    (e : p : _) -> do
-        St.String f <- evalExpression p 
-        let fp = fpFromText f
-        case e of
-            AST.Application n es' -> do
-                file <- readFile fp
-                evalExpression $ AST.Application n (es' ++ [AST.String file])
-            _ -> error "Cannot stream into something that isn't a function"
-    _ -> error "The stream-in operator has the wrong number of arguments"
 evalExpression (AST.Application n es) = do
         f <- asks (St.getFunction n)
         args <- mapM evalExpression es

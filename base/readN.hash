@@ -1,1 +1,1 @@
-parseN readS
+return (parseN readS)

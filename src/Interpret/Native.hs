@@ -39,6 +39,8 @@ native fun vals = do
         "cd"     -> cd (let String s = first in s)
         "out"    -> let String s = second in St.ignore $ writeFile (fpFromText s) $ tshow first
         "app"    -> let String s = second in St.ignore $ appendFile (fpFromText s) $ tshow first
+        "id"     -> return first
+        "readFile" -> let String s = first in String <$> readFile (fpFromText s)
     
 readRatio s = case readSigned readFloat s of
     (x, _) : _ -> x
