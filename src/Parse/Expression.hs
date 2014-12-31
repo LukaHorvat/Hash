@@ -69,7 +69,7 @@ application :: Parser Expression
 application = Application <$> withSpaces identifier <*> many term
 
 table :: OperatorTable Text () Identity Expression
-table = map (map ((`Infix` AssocLeft) . try)) [[mult, div], [add, sub], [lt, gt, eq, neq, leq, geq], [and'], [or']]
+table = map (map ((`Infix` AssocLeft) . try)) [[mult, div], [add, sub], [lt, gt, eq, neq, leq, geq], [and'], [or'], [in', out, app]]
     where add  = operator "+"  *> return (Binary "add")
           sub  = operator "-"  *> return (Binary "sub")
           mult = operator "*"  *> return (Binary "mult")
@@ -82,6 +82,9 @@ table = map (map ((`Infix` AssocLeft) . try)) [[mult, div], [add, sub], [lt, gt,
           geq  = operator ">=" *> return (Binary "geq")
           and' = operator "&"  *> return (Binary "and")
           or'  = operator "|"  *> return (Binary "or")
+          in'  = operator "<|" *> return (Binary "in")
+          out  = operator "|>" *> return (Binary "out")
+          app  = operator "|>>" *> return (Binary "app")
 
 term :: Parser Expression          
 term = (symbol '(' *> expression <* symbol ')') <|> leaf

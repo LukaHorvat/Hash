@@ -42,17 +42,6 @@ while = While
     <$> (withSpaces (string "while") *> withSpaces expression)
     <*> withSpaces statement
 
-pipe :: Parser Statement
-pipe = do
-    expr <- withSpaces expression 
-    sep <- try (word "|>>") <|> word "|>" <|> word "<|"
-    str <- stringLit
-    let p = Pipe $ case sep of
-            "|>>" -> Append
-            "|>"  -> Out
-            "<|"  -> In
-    return $ p expr str
-
 comment :: Parser Text
 comment = pack <$> (char '#' *> many anyChar)
 
@@ -63,7 +52,6 @@ statement = desugarInfix <$> (stmt <* optional (symbol ';'))
               <|> try while
               <|> try return'
               <|> try assignment
-              <|> try pipe
               <|> line) <* optional comment
 
 statements :: Parser Statement

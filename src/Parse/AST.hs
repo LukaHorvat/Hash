@@ -22,7 +22,6 @@ data Statement = Assignment Text Expression
                | While Expression Statement
                | Return Expression
                | Routine [Statement]
-               | Pipe Pipe Expression Text
                deriving (Show, Generic)
 
 data Subroutine = Subroutine Text [Text] Statement 

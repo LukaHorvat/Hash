@@ -27,7 +27,6 @@ desugarInfix stat = case stat of
     While e s      -> While (expr e) (desugarInfix s)
     Return e       -> Return $ expr e
     Routine ss     -> Routine $ map desugarInfix ss
-    Pipe p e s     -> Pipe p (expr e) s
     where expr (Binary op l r)    = Application op [expr l, expr r]
           expr (Application s es) = Application s $ map expr es 
           expr (Unary op e)       = Unary op $ expr e

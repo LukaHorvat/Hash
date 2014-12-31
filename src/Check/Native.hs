@@ -26,11 +26,14 @@ native point = case point of
           typ "or"    = ([Boolean, Boolean], Boolean)
           typ "neg"   = ([Number], Number)
           typ "not"   = ([Boolean], Boolean)
-          typ "readS" = ([], String)
-          typ "readN" = ([], Number)
-          typ "readB" = ([], Boolean)
+          typ "readS"  = ([], String)
+          typ "parseN" = ([String], Number)
+          typ "parseB" = ([String], Boolean)
           typ "pwd"   = ([], String)
           typ "cd"    = ([String], Unit)
+          typ "in"    = ([Any, String], Any)
+          typ "out"   = ([Any, String], Unit)
+          typ "app"   = ([Any, String], Unit)
           maybeType :: Text -> Int -> Maybe Type
           maybeType s n = listToMaybe $ drop n $ fst $ typ s
 

@@ -22,10 +22,20 @@ evalExpression (AST.Number n)         = return $ St.Number n
 evalExpression (AST.String s)         = return $ St.String s
 evalExpression (AST.Boolean b)        = return $ St.Boolean b
 evalExpression (AST.Variable n)       = gets (St.readVar n)
+evalExpression (AST.Application "in" es) = case es of
+    (e : p : _) -> do
+        St.String f <- evalExpression p 
+        let fp = fpFromText f
+        case e of
+            AST.Application n es' -> do
+                file <- readFile fp
+                evalExpression $ AST.Application n (es' ++ [AST.String file])
+            _ -> error "Cannot stream into something that isn't a function"
+    _ -> error "The stream-in operator has the wrong number of arguments"
 evalExpression (AST.Application n es) = do
-    f <- asks (St.getFunction n)
-    args <- mapM evalExpression es
-    f args
+        f <- asks (St.getFunction n)
+        args <- mapM evalExpression es
+        f args
 
 evalStatement :: Statement -> Execution ()
 evalStatement (AST.Assignment n e) = evalExpression e >>= \res -> modify (St.assign n res)
@@ -38,22 +48,8 @@ evalStatement wh@(AST.While cond st) = evalExpression cond >>= \(St.Boolean res)
     else return ()
 evalStatement (AST.Return e) = evalExpression e >>= left
 evalStatement (AST.Routine ss) = mapM_ evalStatement ss
-evalStatement (AST.Pipe p e f) = let fp = fpFromText f in case p of
-    AST.In -> case e of
-        AST.Application n es -> do
-            file <- readFile fp
-            res <- evalExpression $ AST.Application n (es ++ [AST.String file])
-            defaultPrint res
-        _ -> error "Cannot stream into something that isn't a function"
-    AST.Out -> evalExpression e >>= (writeFile fp . tshow)
-    AST.Append -> evalExpression e >>= (appendFile fp . tshow)
 
 defaultPrint v = when (v /= St.Unit) $ print v
-
-appendFile :: MonadIO m => FilePath -> Text -> m ()
-appendFile fp x = do
-    file <- readFile fp
-    length file `seq` writeFile fp $ file ++ x
 
 subroutineName :: Subroutine -> Text
 subroutineName (AST.Subroutine n _ _) = n

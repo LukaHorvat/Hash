@@ -29,7 +29,6 @@ addSubroutine state (AST.Subroutine name args statement)
 hasReturn :: Statement -> Bool
 hasReturn (AST.Assignment _ _) = False
 hasReturn (AST.Line _)         = False
-hasReturn AST.Pipe{}     = False
 hasReturn (AST.If _ th el)     = hasReturn th || any hasReturn el 
 hasReturn (AST.While _ st)     = hasReturn st
 hasReturn (AST.Return _)       = True
@@ -50,7 +49,9 @@ getPoint _    (AST.Number _)        = Literal Number
 getPoint _    (AST.String _)        = Literal String
 getPoint _    (AST.Boolean _)       = Literal Boolean
 getPoint name (AST.Variable v)      = Variable name v
-getPoint _    (AST.Application f _) = Return f
+getPoint name (AST.Application f es) = case (f, es) of
+    ("in", l : _) -> getPoint name l
+    _             -> Return f
 
 connectSubroutine :: State -> Subroutine -> State
 connectSubroutine state (AST.Native _)                  = state
@@ -75,7 +76,6 @@ connectStatement name state stmt = case stmt of
             step1 = isBool cond state
         in step3
     AST.Routine ss   -> foldl' (connectStatement name) state ss
-    AST.Pipe _ ex _  -> connectExpression name state ex
     _                -> addConnection this (getPoint name expr) newState
     where (this, expr) = case stmt of
               AST.Assignment s e -> (Variable name s, e)
