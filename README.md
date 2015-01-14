@@ -9,7 +9,7 @@ The task of this project is to implement **Hash**, a simple shell programmed in 
 - [x] Basic language structures defined
 - [x] Structure execution
 - [x] Parsing
-- [ ] Basic Functionality (*80 %*)
+- [x] Basic Functionality (*80 %*)
     - [x] Abstracted command calling (*2 pts*)
     - [x] Conditional branching (*6 pts*)
     - [x] File manipulation (*3 pts*)
