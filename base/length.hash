@@ -1,0 +1,4 @@
+:s
+    _i = 0
+    while (at _i _s != "") _i = _i + 1  
+    return _i

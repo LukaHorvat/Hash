@@ -1,0 +1,6 @@
+:target :in
+    _len = length _target
+    _i = 0
+    while (_i != length _in & substr _i _len _in != _target) _i = _i + 1
+    if (_i == length _in) return (-1)
+    return _i

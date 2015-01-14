@@ -1,0 +1,3 @@
+:source :target
+    copyDir _source _target
+    removeDir _source

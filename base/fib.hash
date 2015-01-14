@@ -1,4 +1,4 @@
-_n
+:n
     if (_n == 0)
         return 0
     else if (_n == 1)

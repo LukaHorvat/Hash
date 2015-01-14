@@ -1,0 +1,2 @@
+:target
+    if (ls _target == "") removeDir _target

@@ -1,0 +1,5 @@
+:sources
+    while (_sources != "")
+        _file = word _sources
+        if (exists _file >> not) "" |> _file
+        _sources = eatWord _sources

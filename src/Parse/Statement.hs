@@ -2,14 +2,10 @@
 module Parse.Statement where
 
 import Prelude ()
-import Data.Ratio
-import Data.Maybe
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Text
-import Text.Parsec.Expr
 import Text.Parsec.Prim (try)
-import Control.Monad.Identity
 import Parse.AST
 import Parse.Expression
 import Parse.Desugar
@@ -43,10 +39,10 @@ while = While
     <*> withSpaces statement
 
 comment :: Parser Text
-comment = pack <$> (char '#' *> many anyChar)
+comment = pack <$> (char '#' *> many (noneOf ";"))
 
 statement :: Parser Statement
-statement = desugarInfix <$> (stmt <* optional (symbol ';'))
+statement = desugarAST <$> (stmt <* optional (symbol ';'))
     where stmt = (routine
               <|> try if'
               <|> try while

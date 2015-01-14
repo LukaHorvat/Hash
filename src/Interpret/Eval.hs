@@ -3,18 +3,17 @@ module Interpret.Eval where
 
 import Prelude ()
 import Text.Parsec (parse)
-import Parse.Statement
+import Parse.Statement hiding (line)
 import Parse.Subroutine
-import Interpret.State (State, Value, Valuable, Environment, Execution)
+import Interpret.State (Value, Environment, Execution)
 import qualified Interpret.State as St
 import Parse.AST (Expression, Statement, Subroutine)
 import qualified Parse.AST as AST
-import System.Directory
 import Interpret.Native
-import Control.Monad.State.Class
+import Control.Monad.State.Class hiding (state)
 import Control.Monad.Reader.Class
 import Control.Monad.Trans.Either
-import Check.Solve (typeCheckStatementWithBase)
+import Check.Solve (typeCheckStatementWithBase, typeCheck)
 import ClassyPrelude
 
 evalExpression :: Expression -> Execution Value
@@ -26,6 +25,7 @@ evalExpression (AST.Application n es) = do
         f <- asks (St.getFunction n)
         args <- mapM evalExpression es
         f args
+evalExpression _ = error "Processing a sugared expression. Need to desugar first"
 
 evalStatement :: Statement -> Execution ()
 evalStatement (AST.Assignment n e) = evalExpression e >>= \res -> modify (St.assign n res)
@@ -39,6 +39,7 @@ evalStatement wh@(AST.While cond st) = evalExpression cond >>= \(St.Boolean res)
 evalStatement (AST.Return e) = evalExpression e >>= left
 evalStatement (AST.Routine ss) = mapM_ evalStatement ss
 
+defaultPrint :: MonadIO m => Value -> m ()
 defaultPrint v = when (v /= St.Unit) $ print v
 
 subroutineName :: Subroutine -> Text
@@ -58,11 +59,25 @@ interactive :: IO ()
 interactive = do
     env <- base
     types <- baseSubroutines
+    interactiveWithBase env types
+
+interactiveWithBase :: Environment -> [Subroutine] -> IO ()
+interactiveWithBase env types =
     void $ St.runExecution env $ forever $ do
         line <- getLine
         let res = parse statements "" line
         case res of
             Left err -> print err
             Right s  -> case typeCheckStatementWithBase types s of
-                []   -> evalStatement s
-                errs -> putStrLn "Type error"
+                [] -> evalStatement s
+                _  -> putStrLn "Type error"
+
+evalFile :: (Functor m, MonadIO m) => FilePath -> Environment -> [Subroutine] -> m ()
+evalFile path baseEnv baseSubs = do
+    res <- subroutineFromFile path
+    case res of
+        Left err  -> print err
+        Right sub -> liftIO $ void $ St.runExecution baseEnv $
+            case typeCheck (sub : baseSubs) of
+                [] -> void $ subroutineFunction sub []
+                _  -> putStrLn "Type error"

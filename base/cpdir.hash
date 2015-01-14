@@ -1,0 +1,6 @@
+:sources :target
+    while (_sources != "")
+        _file = word _sources
+        _t = fileName _file >> combine _target
+        if (dirExists _file) copyDir _file _t
+        _sources = eatWord _sources

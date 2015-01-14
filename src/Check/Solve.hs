@@ -2,15 +2,13 @@
 module Check.Solve where
 
 import Prelude()
-import Check.Types
+import Check.Types hiding (types)
 import qualified Check.Native as Native
 import qualified Parse.AST as AST
-import Parse.AST (Statement, Expression, Subroutine, Program)
+import Parse.AST (Statement, Expression, Subroutine)
 import Parse.Subroutine
-import System.Directory
 import Data.Graph
 import Data.Maybe
-import Debug.Trace
 import ClassyPrelude
 
 addSubroutine :: State -> Subroutine -> State
@@ -35,7 +33,7 @@ hasReturn _                 = False
 
 addStatement :: Text -> State -> Statement -> State
 addStatement name state stmt = case stmt of
-    AST.Assignment var e -> introducePoint (Variable name var) state
+    AST.Assignment var _ -> introducePoint (Variable name var) state
     AST.If _ th el       -> let newState = addStatement name state th in case el of
         Just st -> addStatement name newState st
         Nothing -> newState
@@ -51,17 +49,18 @@ getPoint name (AST.Variable v)      = Variable name v
 getPoint name (AST.Application f es) = case (f, es) of
     ("id", a : _) -> getPoint name a --Redirects to the return type of the argument
     _             -> Return f
+getPoint _ _ = error "Processing a sugared expression. Need to desugar first"
 
 connectSubroutine :: State -> Subroutine -> State
 connectSubroutine state (AST.Native _)                  = state
 connectSubroutine state (AST.Subroutine name args stmt) = step2
     where step1 = connectStatement name state stmt
           step2 = foldl' process step1 (zip args [0..])
-          process state (arg, i) = addConnection (Argument name i) (Variable name arg) state
+          process st (arg, i) = addConnection (Argument name i) (Variable name arg) st
 
 connectStatement :: Text -> State -> Statement -> State
 connectStatement name state stmt = case stmt of
-    AST.Line expr     -> connectExpression name state expr
+    AST.Line e        -> connectExpression name state e
     AST.If cond th el -> 
         let step3 = connectStatement name step2 th 
             step2 = connectExpression name step1 cond
@@ -79,18 +78,22 @@ connectStatement name state stmt = case stmt of
     where (this, expr) = case stmt of
               AST.Assignment s e -> (Variable name s, e)
               AST.Return e       -> (Return name, e)
-          newState = case expr of AST.Application _ es -> connectExpression name state expr ; _ -> state
+              _                  -> error "this and expr shouldn't be accessed"
+          newState = connectExpression name state expr
           isBool e = addConnection (getPoint name e) (Literal Boolean)
 
 connectExpression :: Text -> State -> Expression -> State
 connectExpression name state expr = case expr of
     AST.Application f es | f `elem` ["eq", "neq"] -> connect es 
                          | otherwise              -> foldl' (process f) state $ zip es [0..]
-    _                    -> state
-    where process f st (ex, i) = addConnection this (getPoint name ex) newSt where 
-              this = Argument f i
-              newSt = case ex of AST.Application _ es -> connectExpression name st ex ; _ -> st
-          connect [e1, e2] = addConnection (getPoint name e1) (getPoint name e2) state
+    _ -> state
+    where process f st (ex, i) = addConnection this (getPoint name ex) newSt 
+              where this = Argument f i
+                    newSt = connectExpression name st ex
+          connect [e1, e2] = addConnection (getPoint name e1) (getPoint name e2) step2
+              where step1 = connectExpression name state e1
+                    step2 = connectExpression name step1 e2
+          connect _        = error "Too many arguments to eq or neq"
 
 tryCollect :: [Type] -> Either (Type, Type) (Maybe Type)
 tryCollect types = case ordNub $ filter (/= Any) types of
@@ -99,10 +102,10 @@ tryCollect types = case ordNub $ filter (/= Any) types of
     _         -> Right Nothing
 
 solveSubroutine :: [Subroutine] -> State
-solveSubroutine ss = foldl' process raw components
+solveSubroutine ss = foldl' process raw comps
     where raw = foldl' connectSubroutine (foldl' addSubroutine empty ss) ss
           list = getGraph raw
-          components = map flattenSCC $ stronglyConnComp $ map (\(x, y) -> (x, x, y)) list
+          comps = map flattenSCC $ stronglyConnComp $ map (\(x, y) -> (x, x, y)) list
           compType comp = tryCollect $ mapMaybe (`getType` raw) comp
           process state comp = case compType comp of
               Left (t1,t2)     -> reportContradiction comp t1 t2 state
@@ -133,4 +136,4 @@ typeCheckStatement st = do
     return $ typeCheck $ AST.Subroutine "_interactive" [] st : subs
 
 typeCheckStatementWithBase :: [Subroutine] -> Statement -> [Text]
-typeCheckStatementWithBase base st = typeCheck $ AST.Subroutine "_interactive" [] st : base
+typeCheckStatementWithBase base' st = typeCheck $ AST.Subroutine "_interactive" [] st : base'

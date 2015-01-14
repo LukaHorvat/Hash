@@ -2,14 +2,8 @@
 module Parse.Subroutine where
 
 import Prelude ()
-import Data.Ratio
-import Data.Maybe
-import Text.Parsec.Char
-import Text.Parsec.Combinator
 import Text.Parsec.Text
-import Text.Parsec.Expr
-import Text.Parsec.Prim (try)
-import Text.Parsec (parse, ParseError)
+import Text.Parsec (parse, ParseError, char)
 import Parse.AST
 import Parse.Expression
 import Parse.Statement
@@ -21,11 +15,13 @@ import ClassyPrelude
 
 subroutine :: Text -> Parser Subroutine
 subroutine name = (word "native" *> return (Native name))
-              <|> (Subroutine name <$> many (withSpaces variable) <*> withSpaces statement)
+              <|> (Subroutine name <$> many (withSpaces (char ':' *> identifier)) <*> (toStmt <$> many (withSpaces statement)))
+              where toStmt [x] = x
+                    toStmt xs  = Routine xs
 
 subroutineFromFile :: (Functor m, MonadIO m) => FilePath -> m (Either ParseError Subroutine)
 subroutineFromFile path = 
-    parse (subroutine $ pack $ takeBaseName $ fpToString path) "" . desugarIndentation <$> readFile path
+    parse (subroutine $ pack $ takeBaseName $ fpToString path) "" . desugarString <$> readFile path
 
 baseSubroutines :: (Functor m, MonadIO m) => m [Subroutine]
 baseSubroutines = do

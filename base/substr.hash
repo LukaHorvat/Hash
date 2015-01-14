@@ -1,0 +1,2 @@
+:start :len :str
+    return (drop _start _str >> take _len)

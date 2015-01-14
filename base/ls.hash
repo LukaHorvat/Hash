@@ -1,0 +1,6 @@
+:s
+    _wd = pwd
+    cd _s
+    _res = ls
+    cd _wd
+    return _res

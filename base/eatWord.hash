@@ -1,0 +1,4 @@
+:s
+    _i = indexOf " " _s
+    if (_i == -1) return ""
+    return (drop (_i + 1) _s)

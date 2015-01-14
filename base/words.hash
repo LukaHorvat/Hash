@@ -1,0 +1,6 @@
+:s
+    _i = 0
+    while (_s != "")
+        _s = eatWord _s
+        _i = _i + 1
+    return _i

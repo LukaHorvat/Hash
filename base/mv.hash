@@ -1,0 +1,12 @@
+:sources :target
+    if (words _sources == 1)
+        if (dirExists _sources & not (dirExists _target)) renameDir _sources _target
+        else if (fileExists _sources) moveFile _sources _target
+    else
+        if (dirExists _target)
+            while (_sources != "")
+                _file = word _sources
+                _t = fileName _file >> combine _target
+                if (fileExists _file) moveFile _file _t
+                if (dirExists _file) moveDir _file _t
+                _sources = eatWord _sources

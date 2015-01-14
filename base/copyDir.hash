@@ -1,0 +1,28 @@
+:source :target
+    if (exists _target >> not) createDir _target
+    _wd = pwd
+    cd _source
+    _q = ""
+    _step = ls
+    _files = ""
+    while (_step != "")
+        _file = word _step
+        if (fileExists _file) _files = _files ++ _file ++ " "
+        else if (dirExists _file) _q = _q ++ _file ++ " "
+        _step = eatWord _step
+    while (_q != "")
+        _el = word _q
+        _inner = ls _el
+        while (_inner != "")
+            _innerEl = word _inner >> combine _el
+            if (fileExists _innerEl) _files = _files ++ _innerEl ++ " "
+            else if (dirExists _innerEl) _q = _q ++ _innerEl ++ " "
+            _inner = eatWord _inner
+        _q = eatWord _q
+    cd _wd
+    while (_files != "")
+        _file = word _files
+        _tpath = combine _target _file
+        baseDir _tpath >> makePath
+        copyFile (combine _source _file) _tpath 
+        _files = eatWord _files

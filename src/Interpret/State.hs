@@ -6,7 +6,7 @@ import Data.Map (insert)
 import Data.Ratio
 import Control.Monad.Trans.Either
 import Control.Monad.Trans.State (StateT, runStateT)
-import Control.Monad.State.Class
+import Control.Monad.State.Class hiding (state)
 import ClassyPrelude
 
 data Value = String Text 
@@ -23,10 +23,15 @@ instance Show Value where
 
 instance Num Value where
     (Number x) + (Number y) = Number $ x + y
+    a + b = error $ "Cannot add " ++ show a ++ " and " ++ show b
     negate (Number x) = Number $ -x
+    negate a = error $ "Cannot negate " ++ show a
     (Number x) * (Number y) = Number $ x * y
+    a * b = error $ "Cannot multiply " ++ show a ++ " and " ++ show b
     abs (Number x) = Number $ abs x
+    abs a = error $ "Cannot get absolute value of " ++ show a
     signum (Number x) = Number $ signum x
+    signum a = error $ "Cannot get signum of " ++ show a
     fromInteger x = Number $ fromInteger x
 
 class Valuable a where
@@ -36,18 +41,22 @@ class Valuable a where
 instance Valuable Text where
     toValue = String
     fromValue (String s) = s
+    fromValue a = error $ "Cannot convert " ++ show a ++ " to Text"
 
 instance Valuable Rational where
     toValue = Number
     fromValue (Number x) = x
+    fromValue a = error $ "Cannot convert " ++ show a ++ " to Rational"
 
 instance Valuable Bool where
     toValue = Boolean
     fromValue (Boolean b) = b
+    fromValue a = error $ "Cannot convert " ++ show a ++ " to Bool"
 
 instance Valuable () where
     toValue = const Unit
     fromValue Unit = ()
+    fromValue a = error $ "Cannot convert " ++ show a ++ " to Unit"
 
 instance Valuable Value where
     toValue = id
@@ -55,10 +64,12 @@ instance Valuable Value where
 
 instance Fractional Value where
     (Number x) / (Number y) = Number $ x / y
+    a / b = error $ "Cannot divide " ++ show a ++ " and " ++ show b
     fromRational = Number
 
 instance Ord Value where
     compare (Number x) (Number y) = compare x y
+    compare a b = error $ "Cannot compare " ++ show a ++ " and " ++ show b
 
 data Environment = Environment
                  { subroutines :: Map Text ([Value] -> Execution Value) }

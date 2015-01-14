@@ -1,1 +1,1 @@
-print (parseB readS)
+return (parseB readS)

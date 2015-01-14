@@ -1,0 +1,5 @@
+:sources
+    while (_sources != "")
+        _file = word _sources
+        if (fileExists _file) print <| _file
+        _sources = eatWord _sources

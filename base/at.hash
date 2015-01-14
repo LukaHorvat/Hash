@@ -1,0 +1,2 @@
+:i :s
+    return (substr _i 1 _s)

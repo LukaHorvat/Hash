@@ -1,11 +1,9 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Parse.AST where
 
-import Data.Ratio
-import Data.Text
+import Prelude ()
 import Text.PrettyPrint.GenericPretty
-
-data Pipe = Out | In | Append deriving (Show, Generic)
+import ClassyPrelude
 
 data Expression = Number Rational
                 | String Text

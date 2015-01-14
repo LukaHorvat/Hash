@@ -21,7 +21,8 @@ data State = State
            , connections :: Map TypePoint [TypePoint] 
            , contradictions :: [Text] }
            deriving Show
-           
+        
+empty :: State   
 empty = State { points = [], connections = mempty, types = mempty, contradictions = [] }
 
 addType :: TypePoint -> Type -> State -> State
@@ -54,8 +55,8 @@ getGraph :: State -> [(TypePoint, [TypePoint])]
 getGraph = toList . connections
 
 reportContradiction :: [TypePoint] -> Type -> Type -> State -> State
-reportContradiction points type1 type2 state = state { contradictions =
-    (intercalate ", " (map showPt points) ++ " should be a " ++ tshow type1 ++ ", but also a " ++ tshow type2) : contradictions state }
+reportContradiction pts type1 type2 state = state { contradictions =
+    (intercalate ", " (map showPt pts) ++ " should be a " ++ tshow type1 ++ ", but also a " ++ tshow type2) : contradictions state }
     where showPt (Argument f n)   = pack (ordinalize (fromIntegral n)) ++ " argument of " ++ f
           showPt (Return f)       = "the return value of " ++ f
           showPt (Variable f var) = "the local variable " ++ var ++ " of the function " ++ f
